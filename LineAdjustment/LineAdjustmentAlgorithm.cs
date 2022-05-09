@@ -9,7 +9,7 @@
 
         private const char STRING_DELIMETER = ' ';
         private const char PARAGRAPH_END = '\n';
-        private const char STRING_SPACE = ' ';
+        private const string STRING_SPACE = " ";
 
         #endregion Constants
 
@@ -25,61 +25,57 @@
             var resultStr = new StringBuilder(input.Length);
 
             var strArray = input.Split(STRING_DELIMETER, StringSplitOptions.RemoveEmptyEntries);
-            var strIndex = 0;
+            int strIndex = 0;
+            int startIndex = strIndex;
+            int paragraphLength = 0;
 
             while (strIndex < strArray.Length)
             {
-                var startIndex = strIndex;
-                var paragraphLength = 0;
-
-                for (var i = startIndex; i < strArray.Length; i++)
+                if (paragraphLength + strArray[strIndex].Length < lineWidth)
                 {
-                    if (paragraphLength + strArray[strIndex].Length >= lineWidth)
-                    {
-                        break;
-                    }
-
                     paragraphLength += strArray[strIndex].Length;
                     strIndex++;
+
+                    if (strIndex < strArray.Length)
+                    {
+                        continue;
+                    }
                 }
 
-                var gaps = CalcGaps(strIndex - startIndex, paragraphLength, lineWidth);
+                var gaps = CalcGaps(strIndex - startIndex, lineWidth - paragraphLength);
 
                 BuildParagraph(resultStr, strArray, startIndex, strIndex, gaps);
+
+                startIndex = strIndex;
+                paragraphLength = 0;
             }
                 
             return resultStr.ToString();
         }
 
-        private int[] CalcGaps(int wordCount, int paragraphLength, int lineWidth)
+        private int[] CalcGaps(int wordCount, int spacesNumber)
         {
-            var spacesNumber = lineWidth - paragraphLength;
-            var gapsNumber = wordCount - 1;
-
-            if (gapsNumber < 1)
-            {
-                return new int[] {spacesNumber};
-            }
+            int gapsNumber = wordCount > 1 ? wordCount - 1 : wordCount;
 
             var gaps = new int[gapsNumber];
-            var restSpaces = spacesNumber;
 
             for (int i = 0; i < gapsNumber; i++)
             {
                 gaps[i] = spacesNumber / gapsNumber;
-                restSpaces -= gaps[i];
             }
+
+            int restSpaces = spacesNumber - (spacesNumber / gapsNumber) * gapsNumber;
+
+            int gapsIndex = 0;
 
             while (restSpaces > 0)
             {
-                for (int i = 0; i < gapsNumber; i++)
+                gaps[gapsIndex++]++;
+                restSpaces--;
+
+                if (gapsIndex >= gapsNumber)
                 {
-                    gaps[i]++;
-                    restSpaces--;
-                    if (restSpaces < 1)
-                    {
-                        break;
-                    }
+                    gapsIndex = 0;
                 }
             }
 
@@ -88,7 +84,7 @@
 
         private void BuildParagraph(StringBuilder str, string[] data, int startIndex, int endIndex, int[] gaps)
         {
-            var gapsIndex = 0;
+            int gapsIndex = 0;
 
             for (int i = startIndex; i < endIndex; i++)
             {
@@ -99,10 +95,7 @@
                     continue;
                 }
 
-                for (int j = 0; j < gaps[gapsIndex]; j++)
-                {
-                    str.Append(STRING_SPACE);
-                }
+                str.Insert(str.Length, STRING_SPACE, gaps[gapsIndex]);
 
                 gapsIndex++;
             }
